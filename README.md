@@ -36,6 +36,7 @@
 - 🏗 **Scalable & Production-Ready** with advanced indexing support.
 - 🛠 **Seamless Integration** with AI applications and machine learning models.
 - 🔍 **Fully Compatible** with `pgvector` and enhanced for better performance.
+- 🌍 **Geo Extensions** → Includes PostGIS, pgRouting, and related extensions for geospatial data.
 
 ---
 
@@ -45,17 +46,17 @@
 
 Ensure PostgreSQL is installed and activate the `pgvector` extension:
 
-```sh
+````sh
 # Install the pgvector extension
-psql -d your_database -c "CREATE EXTENSION IF NOT EXISTS vector;"
-```
+
+# psql -d your_database -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 ### 2️⃣ Clone the Repository
 
 ```sh
 git clone https://github.com/robsoncombr/rbs-pgvector.git
 cd rbs-pgvector
-```
+````
 
 ### 3️⃣ Set Up the Database
 
@@ -73,43 +74,118 @@ psql -d your_database -f schema.sql
 
 ```sql
 CREATE TABLE embeddings (
-    id SERIAL PRIMARY KEY,
-    data VECTOR(1536) -- Example for OpenAI's 1536-dimension embeddings
+id SERIAL PRIMARY KEY,
+data VECTOR(1536) -- Example for OpenAI's 1536-dimension embeddings
 );
 
 -- Insert a vector
 INSERT INTO embeddings (data) VALUES ('[0.1, 0.2, 0.3, ..., 0.9]');
 
 -- Find the closest match using Cosine Similarity
-SELECT * FROM embeddings ORDER BY data <=> '[0.1, 0.2, 0.3, ..., 0.9]' LIMIT 5;
+SELECT \* FROM embeddings ORDER BY data <=> '[0.1, 0.2, 0.3, ..., 0.9]' LIMIT 5;
 ```
 
 ---
 
-## 📖 Documentation
+## 🛠 **Rebuilding pgvector with Geo Extensions**
 
-For full documentation, visit the **[Official GitHub Repository](https://github.com/robsoncombr/rbs-pgvector)**.
+The `Dockerfile` in this repository rebuilds the `pgvector` image with additional geo extensions, including **PostGIS**, **pgRouting**, and related tools. Here's how it works:
+
+### **Dockerfile Overview**
+
+```dockerfile
+ARG PG_MAJOR=17
+
+# Stage 1: Use postgres image to get the apt lists
+
+FROM postgres:$PG_MAJOR AS postgres_lists
+ARG PG_MAJOR
+
+# Stage 2: Use pgvector image and copy the apt lists from Stage 1
+
+FROM pgvector/pgvector:0.8.0-pg17
+
+# Copy the apt lists from the postgres image
+
+COPY --from=postgres_lists /var/lib/apt/lists /var/lib/apt/lists
+
+# Install the required packages
+
+RUN apt-get update && \
+ apt-mark hold locales && \
+ apt-get install -y --no-install-recommends \
+ curl \
+ wget \
+ unzip \
+ osm2pgsql \
+ osmium-tool \
+ postgis \
+ postgresql-17-pgrouting && \
+ apt-get autoremove -y && \
+ apt-mark unhold locales && \
+ apt-get clean autoclean && \
+ apt-get autoremove --yes && \
+ rm -rf /var/lib/{apt,dpkg,cache,log}/
+```
+
+### **Key Additions**
+
+- **PostGIS**: For geospatial data support.
+- **pgRouting**: For routing and network analysis.
+- **osm2pgsql & osmium-tool**: For OpenStreetMap data integration.
 
 ---
 
-## 🛠 Contribution
+## 📂 **Initialization Script (`init.sql`)**
 
-We welcome contributions! To get started:
+The `init.sql` script is used to initialize the database with extensions, tables, and sample data. It is mounted in the `docker-compose.yml` file instead of being copied into the image, allowing for easy customization.
 
-1. **Fork the repo**: [rbs-pgvector](https://github.com/robsoncombr/rbs-pgvector)
-2. **Create a new branch**:
-   ```sh
-   git checkout -b feature-new-functionality
-   ```
-3. **Make your changes** and commit:
-   ```sh
-   git commit -m "Added new feature"
-   ```
-4. **Push the changes**:
-   ```sh
-   git push origin feature-new-functionality
-   ```
-5. **Submit a pull request** 🎉
+### **Key Features of `init.sql`**
+
+- Enables `pgvector`, `PostGIS`, and `pgRouting` extensions.
+- Creates tables for testing vector embeddings and geospatial data.
+- Inserts sample data for testing.
+- Includes a cleanup block to ensure no stale data is left behind.
+
+### **Mounting in `docker-compose.yml`**
+
+```yaml
+services:
+pgvector:
+image: pgvector
+volumes: - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+```
+
+---
+
+## 📖 **Initialization Analysis**
+
+When the container starts, the `init.sql` script runs and initializes the database. Here's what happens:
+
+1. **Extensions Created**:
+
+   - All required extensions (`vector`, `postgis`, `postgis_topology`, `postgis_raster`, and `pgrouting`) are created successfully.
+
+2. **Tables Created**:
+
+   - Tables for testing (`document_embeddings` and `locations`) are created.
+
+3. **Data Inserted**:
+
+   - Sample data is inserted into both tables:
+     - `document_embeddings`: 2 rows inserted.
+     - `locations`: 4 rows inserted (including São Paulo, New York, London, and Tokyo).
+
+4. **Indexes Created**:
+
+   - Indexes are created for both tables to optimize performance.
+
+5. **Warnings**:
+
+   - A warning about the `ivfflat` index being created with little data is expected. This is because the table only contains 2 rows of sample data. The index is more effective with larger datasets.
+
+6. **Success Message**:
+   - A success message confirms that all extensions, tables, and test data have been initialized successfully.
 
 ---
 
