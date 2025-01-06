@@ -1,4 +1,13 @@
-name: production-databank
+###
+#* INSTRUCTIONS *#
+# 1. Update this file with your own values.
+# 2. Rename this file to docker-compose.override.yml.
+# 3. Run `docker compose up -d` to start the services.
+#    If you are using additional compose files, use:
+#    `docker compose -f docker-compose.yml -f docker-compose.override.yml up -d`
+###
+
+name: <YOUR-STACK-NAME>
 
 services:
   ###
@@ -10,14 +19,14 @@ services:
   ###
   pgvector:
     #image: pgvector/pgvector:latest
-    image: pgvector/pgvector:0.8.0-pg17
+    image: pgvector/pgvector:<YOUR-TAG>
     container_name: pgvector
     hostname: pgvector
     networks:
       - network
     ports:
-      - "172.16.0.155:5432:5432"
-    restart: always
+      - "<YOUR-PRIVATE-IP>:<YOUR-EXPOSED-PORT>:5432"
+    restart: unless-stopped
     env_file:
       - .env
     environment:
@@ -32,6 +41,6 @@ services:
 
 networks:
   network:
-    name: production-network
+    name: <YOUR-NETWORK-NAME>
     driver: bridge
-    external: true
+    #external: true

@@ -1,3 +1,14 @@
-volumes/*/*
+# folders
+**/.git
+**/dot.git/*
+
+# container data
+**/volumes/*
+
+# env
+**/.env*
+!**/.env.example
+
+# not
 !**/.gitkeep
-**/.env
+!**/dot.git/config
