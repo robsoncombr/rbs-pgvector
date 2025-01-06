@@ -117,7 +117,7 @@ We welcome contributions! To get started:
 
 This project follows a **dual licensing structure**:
 
-- 📂 **`._rbs/`** → Licensed under the terms specified in **[.\_rbs/LICENSE](./_rbs/LICENSE)**.
+- 📂 **`._rbs/`** → Licensed under the terms specified in **[.\_rbs/LICENSE](._rbs/LICENSE)**.
 - 🛠 **`pgvector`** → Maintained under its **original license** as defined in **[LICENSE](LICENSE)**.
 
 For full details, please refer to the respective license files.
