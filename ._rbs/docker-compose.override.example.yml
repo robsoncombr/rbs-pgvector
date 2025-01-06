@@ -37,7 +37,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./volumes/data:/var/lib/postgresql/data
-      - ./volumes/dump:/var/lib/postgresql/data/dump
+      - ./volumes/dump:/var/lib/postgresql/dump
 
 networks:
   network:
